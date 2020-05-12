@@ -50,9 +50,9 @@ Pass *llvm::createSplitBasicBlock(bool flag) {
 
 bool SplitBasicBlock::runOnFunction(Function &F) {
   // Check if the number of applications is correct
-  if (!((SplitNum > 1) && (SplitNum <= 10))) {
-    errs() << "Split application basic block percentage\
-            -split_num=x must be 1 < x <= 10";
+  if (!((SplitNum >= 1) && (SplitNum <= 10))) {
+    errs()<<"Split application basic block x times\
+            -split_num=x must be 1 <= x <= 10";
     return false;
   }
 
@@ -80,7 +80,7 @@ void SplitBasicBlock::split(Function *f) {
                                            IE = origBB.end();
        I != IE; ++I) {
     BasicBlock *curr = *I;
-
+    int splitN = SplitNum;
     // No need to split a 1 inst bb
     // Or ones containing a PHI node
     if (curr->size() < 2 || containsPHI(curr)) {
@@ -88,7 +88,7 @@ void SplitBasicBlock::split(Function *f) {
     }
 
     // Check splitN and current BB size
-    if ((size_t)splitN > curr->size()) {
+    if ((size_t)splitN >= curr->size()) {
       splitN = curr->size() - 1;
     }
 
@@ -109,12 +109,12 @@ void SplitBasicBlock::split(Function *f) {
     BasicBlock *toSplit = curr;
     int last = 0;
     for (int i = 0; i < splitN; ++i) {
+      if (toSplit->size() < 2)
+        continue;
       for (int j = 0; j < test[i] - last; ++j) {
         ++it;
       }
       last = test[i];
-      if (toSplit->size() < 2)
-        continue;
       toSplit = toSplit->splitBasicBlock(it, toSplit->getName() + ".split");
     }
 
